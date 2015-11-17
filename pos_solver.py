@@ -12,12 +12,18 @@
 
 import random
 import math
+from collections import Counter
 
 # We've set up a suggested code structure, but feel free to change it. Just
 # make sure your code still works with the label.py and pos_scorer.py code
 # that we've supplied.
 #
 class Solver:
+    def __init__(self):
+        self.prob_s = {}
+        self.prob_s1_s2 = {}
+        self.prob_w_s = {}
+        self.prob_w = {}
 
     # Calculate the log of the posterior probability of a given sentence
     #  with a given part-of-speech labeling
@@ -27,7 +33,35 @@ class Solver:
     # Do the training!
     #
     def train(self, data):
-        pass
+        all_s = Counter()
+        all_ss = Counter()
+        all_ws = Counter()
+        all_w = Counter()
+
+        for line in data:
+            line = zip(*line)
+            for word, typ in line:
+                all_s[typ] += 1
+                all_ws[(word, typ)] += 1
+                all_w[word] += 1
+
+            for (w1, t1), (w2, t2) in zip(line, line[1:]):
+                all_ss[(t1,t2)] += 1
+
+        all_s_count = sum(all_s.values())
+        all_w_count = sum(all_w.values())
+
+        self.prob_w = {k: v/float(all_w_count) for k,v in all_w.iteritems()}
+        self.prob_s = {k: v/float(all_s_count) for k,v in all_s.iteritems()}
+        self.prob_s1_s2 = {(t1,t2):float(v)/all_s[t1] for (t1, t2), v in all_ss.iteritems()}
+        self.prob_w_s = {(w,t):float(v)/all_s[t] for (w,t), v in all_ws.iteritems()}
+
+        self.prob_s_w1 = {(t,w):float(v)/all_w[w] for (w,t), v in all_ws.iteritems()}
+        self.prob_s_w2 = {(t,w):v * self.prob_s[t] / self.prob_w[w]
+                             for (w,t), v in self.prob_w_s.iteritems()}
+        import pdb; pdb.set_trace()
+        print [x for x in self.prob_s_w2 if 
+                        int(self.prob_s_w1[x]*100000) != int(self.prob_s_w2[x]*100000)][:10]
 
     # Functions for each algorithm.
     #
