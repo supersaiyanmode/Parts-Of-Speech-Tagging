@@ -47,29 +47,39 @@ class Solver:
 
             for (w1, t1), (w2, t2) in zip(line, line[1:]):
                 all_ss[(t1,t2)] += 1
-
         all_s_count = sum(all_s.values())
+#	import pdb;pdb.set_trace()
         all_w_count = sum(all_w.values())
-
         self.prob_w = {k: v/float(all_w_count) for k,v in all_w.iteritems()}
         self.prob_s = {k: v/float(all_s_count) for k,v in all_s.iteritems()}
         self.prob_s1_s2 = {(t1,t2):float(v)/all_s[t1] for (t1, t2), v in all_ss.iteritems()}
         self.prob_w_s = {(w,t):float(v)/all_s[t] for (w,t), v in all_ws.iteritems()}
 
         self.prob_s_w1 = {(t,w):float(v)/all_w[w] for (w,t), v in all_ws.iteritems()}
-        self.prob_s_w2 = {(t,w):v * self.prob_s[t] / self.prob_w[w]
+        self.prob_s_w2 = {(t,w):(v * self.prob_s[t]) / self.prob_w[w]
                              for (w,t), v in self.prob_w_s.iteritems()}
-        import pdb; pdb.set_trace()
-        print [x for x in self.prob_s_w2 if 
-                        int(self.prob_s_w1[x]*100000) != int(self.prob_s_w2[x]*100000)][:10]
-
+        print "----"
+	print [x for x in self.prob_s_w2 if 
+                        int(self.prob_s_w1[x]*1000) != int(self.prob_s_w2[x]*1000)][:10]
+	print "---"
     # Functions for each algorithm.
     #
     def naive(self, sentence):
+	print "Naive------------------"
         return [ [ [ "noun" ] * len(sentence)], [] ]
 
     def mcmc(self, sentence, sample_count):
-        return [ [ [ "noun" ] * len(sentence) ] * sample_count, [] ]
+	dict=[]
+	temp_dict={}
+	for i in range(0,len(sentence)):
+		temp_dict[i]=self.prob_s.keys()[random.choice(range(0,len(self.prob_s)))] 
+	dict.append(temp_dict)
+	for sample in range(1,sample_count-1):
+		prev_sample=dict[sample-1]
+		next_dict={}
+		for i in range(0,len(sentence)):
+			next_dict[i]=
+	return [ [ temp_dict ] * sample_count, [] ]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
