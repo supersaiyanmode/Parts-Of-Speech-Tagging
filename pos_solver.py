@@ -24,6 +24,7 @@ class Solver:
         self.prob_s1_s2 = {}
         self.prob_w_s = {}
         self.prob_w = {}
+        self.prob_start_s = {}
 
     # Calculate the log of the posterior probability of a given sentence
     #  with a given part-of-speech labeling
@@ -37,6 +38,7 @@ class Solver:
         all_ss = Counter()
         all_ws = Counter()
         all_w = Counter()
+        start_s = Counter()
 
         for line in data:
             line = zip(*line)
@@ -47,9 +49,12 @@ class Solver:
 
             for (w1, t1), (w2, t2) in zip(line, line[1:]):
                 all_ss[(t1,t2)] += 1
+            start_s[line[1]] += 1
+
         all_s_count = sum(all_s.values())
-#	import pdb;pdb.set_trace()
+        start_s_count = sum(start_s.values())
         all_w_count = sum(all_w.values())
+
         self.prob_w = {k: v/float(all_w_count) for k,v in all_w.iteritems()}
         self.prob_s = {k: v/float(all_s_count) for k,v in all_s.iteritems()}
         self.prob_s1_s2 = {(t1,t2):float(v)/all_s[t1] for (t1, t2), v in all_ss.iteritems()}
@@ -58,28 +63,32 @@ class Solver:
         self.prob_s_w1 = {(t,w):float(v)/all_w[w] for (w,t), v in all_ws.iteritems()}
         self.prob_s_w2 = {(t,w):(v * self.prob_s[t]) / self.prob_w[w]
                              for (w,t), v in self.prob_w_s.iteritems()}
+
+        self.prob_start_s = {t: v/float(start_s_count) for t,v in start_s.iteritems()}
+
         print "----"
-	print [x for x in self.prob_s_w2 if 
+        print [x for x in self.prob_s_w2 if 
                         int(self.prob_s_w1[x]*1000) != int(self.prob_s_w2[x]*1000)][:10]
-	print "---"
+        print "---"
+
     # Functions for each algorithm.
     #
     def naive(self, sentence):
-	print "Naive------------------"
-        return [ [ [ "noun" ] * len(sentence)], [] ]
+        res = [max([s for s in self.prob_s.keys()], key=lambda x: self.prob_s_w1.get((x, w), 0)) for w in sentence]
+        return [[res], []]
 
     def mcmc(self, sentence, sample_count):
-	dict=[]
-	temp_dict={}
-	for i in range(0,len(sentence)):
-		temp_dict[i]=self.prob_s.keys()[random.choice(range(0,len(self.prob_s)))] 
-	dict.append(temp_dict)
-	for sample in range(1,sample_count-1):
-		prev_sample=dict[sample-1]
-		next_dict={}
-		for i in range(0,len(sentence)):
-			next_dict[i]=
-	return [ [ temp_dict ] * sample_count, [] ]
+        dict=[]
+        temp_dict={}
+        for i in range(0,len(sentence)):
+            temp_dict[i]=self.prob_s.keys()[random.choice(range(0,len(self.prob_s)))] 
+        dict.append(temp_dict)
+        for sample in range(1,sample_count-1):
+            prev_sample=dict[sample-1]
+            next_dict={}
+            for i in range(0,len(sentence)):
+                next_dict[i]=None
+        return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
