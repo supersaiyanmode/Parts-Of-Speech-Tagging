@@ -12,7 +12,7 @@
 
 import random
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 
 # We've set up a suggested code structure, but feel free to change it. Just
 # make sure your code still works with the label.py and pos_scorer.py code
@@ -40,7 +40,7 @@ class Solver:
         all_w = Counter()
         start_s = Counter()
 
-        for line in data:
+        for index, line in enumerate(data):
             line = zip(*line)
             for word, typ in line:
                 all_s[typ] += 1
@@ -49,7 +49,7 @@ class Solver:
 
             for (w1, t1), (w2, t2) in zip(line, line[1:]):
                 all_ss[(t1,t2)] += 1
-            start_s[line[1]] += 1
+            start_s[line[0][1]] += 1
 
         all_s_count = sum(all_s.values())
         start_s_count = sum(start_s.values())
@@ -78,6 +78,7 @@ class Solver:
         return [[res], []]
 
     def mcmc(self, sentence, sample_count):
+        return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
         dict=[]
         temp_dict={}
         for i in range(0,len(sentence)):
@@ -97,7 +98,43 @@ class Solver:
         return [ [ [ "noun" ] * len(sentence)], [[0] * len(sentence),] ]
 
     def viterbi(self, sentence):
-        return [ [ [ "noun" ] * len(sentence)], [] ]
+        #return [ [ [ "noun" ] * len(sentence)], [] ]
+        l = math.log
+        t1 = defaultdict(dict)
+        t2 = defaultdict(dict)
+        t = len(sentence)
+        MIN = 0.00001
+
+        all_states = self.prob_s.keys()
+        import pdb; pdb.set_trace()
+        for i, s in enumerate(all_states):
+            t1[i][0] = l(self.prob_start_s.get(s, MIN)) + \
+                            l(self.prob_w_s.get((sentence[0], s), MIN))
+            t2[i][0] = 0
+
+        for i in range(1,t):
+            for j, s in enumerate(all_states):
+                maxItem = (-1e10, -1)
+                for k, new_state in enumerate(all_states):
+                    prevProb = t1[k][i-1]
+                    transProb = self.prob_s1_s2.get((new_state, s), MIN)
+                    emissProb = self.prob_w_s.get((sentence[j], s), MIN)
+                    curProb = prevProb + l(transProb) + l(emissProb)
+                    curItem = curProb, k
+                    if curItem > maxItem:
+                        maxItem = curItem
+                t1[j][i], t2[j][i] = maxItem
+        print t1
+        print t2
+
+        z = [0] * t
+        z[t-1] = max(range(len(all_states)), key=lambda k: t1[k][len(sentence)-1])
+        result = [all_states[z[t-1]]]
+        for i in range(t-1, 0, -1):
+            z[i-1] = t2[z[i]][i]
+            result = [all_states[z[i-1]]] + result
+
+        return [[result], []]
 
 
     # This solve() method is called by label.py, so you should keep the interface the
