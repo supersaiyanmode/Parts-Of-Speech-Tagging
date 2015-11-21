@@ -9,8 +9,8 @@
 ####
 # Put your report here!!
 ####
-
 import random
+from bisect import bisect
 import math
 from collections import Counter, defaultdict
 
@@ -78,18 +78,49 @@ class Solver:
         return [[res], []]
 
     def mcmc(self, sentence, sample_count):
-        return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
+      #  return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
         dict=[]
         temp_dict={}
         for i in range(0,len(sentence)):
             temp_dict[i]=self.prob_s.keys()[random.choice(range(0,len(self.prob_s)))] 
         dict.append(temp_dict)
-        for sample in range(1,sample_count-1):
-            prev_sample=dict[sample-1]
-            next_dict={}
+        for sample in range(1,sample_count):
+            prev_sample= dict[sample-1]
+            next_sample={}
             for i in range(0,len(sentence)):
-                next_dict[i]=None
-        return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
+                if i == 0:
+                    next_sample[i] = self.calc_weight(1,sentence[i],prev_sample[i+1])
+                elif i == len(sentence)-1:
+                    next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],1)
+                else:
+                    next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],prev_sample[i+1])
+            dict.append(next_sample)
+        return [ dict[1:], [] ]
+
+    def calc_weight(self,prev_sample,word,next_sample):
+        available_choices = []
+        for speech in self.prob_s.keys():
+            if (word,speech) not in self.prob_w_s:
+                continue
+            if prev_sample == 1:
+                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(next_sample,speech)]
+            if next_sample == 1:
+                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(speech,prev_sample)]
+            if prev_sample !=1 and next_sample != 1:
+                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(next_sample,speech)]*self.prob_s1_s2[(speech,prev_sample)]
+            available_choices.append([speech,value])
+        return self.weightedChoice(available_choices)
+
+    def weightedChoice(self,choices):
+        values, weights = zip(*choices)
+        total = 0
+        cum_weights = []
+        for w in weights:
+                total += w
+                cum_weights.append(total)
+        x = random.random()*total
+        i = bisect(cum_weights, x)
+        return values[i]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
@@ -98,7 +129,7 @@ class Solver:
         return [ [ [ "noun" ] * len(sentence)], [[0] * len(sentence),] ]
 
     def viterbi(self, sentence):
-        #return [ [ [ "noun" ] * len(sentence)], [] ]
+        return [ [ [ "noun" ] * len(sentence)], [] ]
         l = math.log
         t1 = defaultdict(dict)
         t2 = defaultdict(dict)
@@ -106,7 +137,7 @@ class Solver:
         MIN = 0.00001
 
         all_states = self.prob_s.keys()
-        import pdb; pdb.set_trace()
+#        import pdb; pdb.set_trace()
         for i, s in enumerate(all_states):
             t1[i][0] = l(self.prob_start_s.get(s, MIN)) + \
                             l(self.prob_w_s.get((sentence[0], s), MIN))
