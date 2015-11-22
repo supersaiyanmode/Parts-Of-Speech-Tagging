@@ -201,22 +201,6 @@ class Solver:
 
         return [[result], []]
 
-    def viterbi_new(self, sentence):
-        MIN = 1e-6
-        maxItem = (-1e1000, ())
-        for states in product(self.prob_s.keys(), repeat=len(sentence)):
-            prob = math.log(self.prob_s.get(states[0]))
-            for index, (state, word) in enumerate(zip(states, sentence)):
-                prob += math.log(self.prob_w_s.get((word, state), MIN))
-                if index != len(sentence) - 1:
-                    prob += math.log(self.prob_s1_s2.get((states[index+1], state), MIN))
-            curItem = (prob, states)
-            if curItem > maxItem:
-                maxItem = curItem
-                print "Choosing:", maxItem
-        print maxItem
-        return [[ list(maxItem[1]) ], [] ]
-
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself. 
     # It's supposed to return a list with two elements:
