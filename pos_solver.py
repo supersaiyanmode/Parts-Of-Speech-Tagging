@@ -101,7 +101,14 @@ class Solver:
             next_sample={}
             for i in range(0,len(sentence)):
                 if sentence[i] not in self.prob_w:
-                    next_sample[i]="noun"
+                    if i == 0:
+                        next_sample[i] = self.calc_weight(1,1,prev_sample[i])
+                    elif len(prev_sample)==1:
+                        next_sample[i] = self.calc_weight(1,1,prev_sample[i])
+                    elif i == len(sentence)-1:
+                        next_sample[i] = self.calc_weight(prev_sample[i-1],1,1)
+                    else:
+                        next_sample[i] = self.calc_weight(prev_sample[i-1],1,prev_sample[i+1])
                 elif len(prev_sample)==1:
                     next_sample[i] = self.calc_weight(1,sentence[i],prev_sample[i]) 
                 elif i == 0:
@@ -118,12 +125,18 @@ class Solver:
         #impor pdb;pdb.set_trace()
         available_choices = []
         for speech in self.prob_s.keys():
-            if prev_sample == 1:
+            if prev_sample == 1 and word != 1:
                 value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))
-            elif next_sample == 1:
+            elif next_sample == 1 and word != 1:
                 value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample))
-            elif prev_sample !=1 and next_sample != 1:
+            elif prev_sample !=1 and next_sample != 1 and word != 1:
                 value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))*self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample))
+            elif prev_sample == 1 and word == 1:
+                value = self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))
+            elif next_sample == 1 and word == 1:
+                value = self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample))
+            elif prev_sample !=1 and next_sample != 1 and word ==1:
+                value = self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))*self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample)) 
             available_choices.append([speech,value])
         return self.weightedChoice(available_choices)
     def calc_dummy(self,next_sample,speech):
