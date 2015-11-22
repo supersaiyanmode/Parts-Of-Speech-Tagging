@@ -25,7 +25,7 @@ class Solver:
         self.prob_w_s = {}
         self.prob_w = {}
         self.prob_start_s = {}
-
+        self.mcmc_dict = []
     # Calculate the log of the posterior probability of a given sentence
     #  with a given part-of-speech labeling
     def posterior(self, sentence, label):
@@ -98,7 +98,8 @@ class Solver:
                 else:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],prev_sample[i+1])
             dict.append(next_sample)
-        return [ dict[1920:], [] ]
+        self.mcmc_dict =dict 
+        return [ dict[::-1][0:5], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
         #import pdb;pdb.set_trace()
@@ -118,23 +119,42 @@ class Solver:
     def calc_dummy_word(self,word,speech):
             value = self.prob_s_w1.get((speech,word),0)*self.prob_w.get((word),0)/self.prob_s.get((speech),0)
             return value
-    def weightedChoice(self,choices):
-        values, weights = zip(*choices)
-        total = 0
-        cum_weights = []
-        for w in weights:
-                total += w
-                cum_weights.append(total)
-        x = random.random()*total
-        i = bisect(cum_weights, x)
-        return values[i]
+    def weightedChoice(self,keys):
+        speech, prob = zip(*keys)
+        prob_tot = 0
+        prob_array = []
+        for each_prob in prob:
+                prob_tot+= each_prob
+                prob_array.append(prob_tot)
+        x = random.random()*prob_tot
+        i = bisect(prob_array, x)
+        return speech[i]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
 
     def max_marginal(self, sentence):
-        return [ [ [ "noun" ] * len(sentence)], [[0] * len(sentence),] ]
-
+        max_margin_dict = []
+        post_prob = []
+        for i in range(0,len(sentence)):
+            temp = []
+            for sample in self.mcmc_dict:
+                temp.append(sample[i])
+            speech = Counter(temp).keys()
+            occurence = Counter(temp).values()
+            #import pdb;pdb.set_trace()
+            
+            max_margin_dict.append(speech[occurence.index(max(occurence))])
+            post_prob.append(float(max(occurence))/float(len(self.mcmc_dict)))
+            #post_prob = self.calc_postprob(max_margin_dict,sentence,occurence)
+        return [ [max_margin_dict], [post_prob,] ]
+    def calc_postprob(self,max_margin_dict,sentence,occurence):
+        post_prob = []
+        #import pdb;pdb.set_trace()
+        for i in range(0,len(sentence)):
+            
+            post_prob.append(self.prob_s_w1.get((max_margin_dict[0],sentence[i]),0.00001))
+        return post_prob
     def viterbi(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
         l = math.log
@@ -191,7 +211,7 @@ class Solver:
         if algo == "Naive":
             return self.naive(sentence)
         elif algo == "Sampler":
-            return self.mcmc(sentence, 2000)
+            return self.mcmc(sentence, 1000)
         elif algo == "Max marginal":
             return self.max_marginal(sentence)
         elif algo == "MAP":
