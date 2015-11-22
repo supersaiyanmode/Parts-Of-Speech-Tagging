@@ -98,7 +98,7 @@ class Solver:
                 else:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],prev_sample[i+1])
             dict.append(next_sample)
-        return [ dict[1999:], [] ]
+        return [ dict[1920:], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
         #import pdb;pdb.set_trace()
@@ -113,10 +113,10 @@ class Solver:
             available_choices.append([speech,value])
         return self.weightedChoice(available_choices)
     def calc_dummy(self,next_sample,speech):
-            value = self.prob_s1_s2.get((speech,next_sample),0.0000001)*self.prob_s.get((next_sample),0.0000001)/self.prob_s.get((speech),0.0000001)
+            value = self.prob_s1_s2.get((speech,next_sample),0)*self.prob_s.get((next_sample),0)/self.prob_s.get((speech),0)
             return value
     def calc_dummy_word(self,word,speech):
-            value = self.prob_s_w1.get((speech,word),0.00001)*self.prob_w.get((word),0.00001)/self.prob_s.get((speech),0.00001)
+            value = self.prob_s_w1.get((speech,word),0)*self.prob_w.get((word),0)/self.prob_s.get((speech),0)
             return value
     def weightedChoice(self,choices):
         values, weights = zip(*choices)
