@@ -13,11 +13,23 @@ import random
 from bisect import bisect
 import math
 from collections import Counter, defaultdict
+from itertools import product
 
 # We've set up a suggested code structure, but feel free to change it. Just
 # make sure your code still works with the label.py and pos_scorer.py code
 # that we've supplied.
 #
+
+def print_table(t, s, w):
+    for _, row in t.items():
+        for _, cell in row.items():
+            if isinstance(cell, int):
+                print "%7d"%cell,
+            else:
+                print "%5.2f"%cell,
+        print
+
+
 class Solver:
     def __init__(self):
         self.prob_s = {}
@@ -155,8 +167,8 @@ class Solver:
                     if curItem > maxItem:
                         maxItem = curItem
                 t1[j][i], t2[j][i] = maxItem
-        print t1
-        print t2
+        print_table(t1)
+        print_table(t2)
 
         z = [0] * t
         z[t-1] = max(range(len(all_states)), key=lambda k: t1[k][len(sentence)-1])
@@ -167,6 +179,21 @@ class Solver:
 
         return [[result], []]
 
+    def viterbi_new(self, sentence):
+        MIN = 1e-6
+        maxItem = (-1e1000, ())
+        for states in product(self.prob_s.keys(), repeat=len(sentence)):
+            prob = math.log(self.prob_s.get(states[0]))
+            for index, (state, word) in enumerate(zip(states, sentence)):
+                prob += math.log(self.prob_w_s.get((word, state), MIN))
+                if index != len(sentence) - 1:
+                    prob += math.log(self.prob_s1_s2.get((states[index+1], state), MIN))
+            curItem = (prob, states)
+            if curItem > maxItem:
+                maxItem = curItem
+                print "Choosing:", maxItem
+        print maxItem
+        return [[ list(maxItem[1]) ], [] ]
 
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself. 
