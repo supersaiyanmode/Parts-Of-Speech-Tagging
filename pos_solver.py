@@ -87,6 +87,7 @@ class Solver:
     #
     def naive(self, sentence):
         res = [max([s for s in self.prob_s.keys()], key=lambda x: self.prob_s_w1.get((x, w), 0)) for w in sentence]
+        self.results_naive = res
         return [[res], []]
 
     def mcmc(self, sentence, sample_count):
@@ -157,7 +158,11 @@ class Solver:
         return speech[index]
 
     def best(self, sentence):
-        return [ [ [ "noun" ] * len(sentence)], [] ]
+        res = [max(x) for x in zip(self.results_max_marginal, self.results_viterbi, self.results_naive)]
+        for index, (state, word) in enumerate(zip(res, sentence)):
+            if word in "; [ ? ! ( : , ] -- '' `` ' . )".split():
+               res[index] = "."
+        return [ [ res ], [] ]
 
     def max_marginal(self, sentence):
         max_margin_dict = []
@@ -171,6 +176,7 @@ class Solver:
             
             max_margin_dict.append(speech[occurence.index(max(occurence))])
             post_prob.append(float(max(occurence))/float(len(self.mcmc_dict)))
+        self.results_max_marginal = max_margin_dict
         return [ [max_margin_dict], [post_prob,] ]
 
     def calc_postprob(self,max_margin_dict,sentence,occurence):
@@ -211,7 +217,8 @@ class Solver:
         for i in range(t-1, 0, -1):
             z[i-1] = t2[z[i]][i]
             result = [all_states[z[i-1]]] + result
-
+        
+        self.results_viterbi = result
         return [[result], []]
 
     # This solve() method is called by label.py, so you should keep the interface the
