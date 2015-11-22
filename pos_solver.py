@@ -13,11 +13,23 @@ import random
 from bisect import bisect
 import math
 from collections import Counter, defaultdict
+from itertools import product
 
 # We've set up a suggested code structure, but feel free to change it. Just
 # make sure your code still works with the label.py and pos_scorer.py code
 # that we've supplied.
 #
+
+def print_table(t, s, w):
+    for _, row in t.items():
+        for _, cell in row.items():
+            if isinstance(cell, int):
+                print "%7d"%cell,
+            else:
+                print "%5.2f"%cell,
+        print
+
+
 class Solver:
     def __init__(self):
         self.prob_s = {}
@@ -143,21 +155,18 @@ class Solver:
                 temp.append(sample[i])
             speech = Counter(temp).keys()
             occurence = Counter(temp).values()
-            #import pdb;pdb.set_trace()
             
             max_margin_dict.append(speech[occurence.index(max(occurence))])
             post_prob.append(float(max(occurence))/float(len(self.mcmc_dict)))
-            #post_prob = self.calc_postprob(max_margin_dict,sentence,occurence)
         return [ [max_margin_dict], [post_prob,] ]
+
     def calc_postprob(self,max_margin_dict,sentence,occurence):
         post_prob = []
-        #import pdb;pdb.set_trace()
         for i in range(0,len(sentence)):
-            
             post_prob.append(self.prob_s_w1.get((max_margin_dict[0],sentence[i]),0.00001))
         return post_prob
+
     def viterbi(self, sentence):
-        return [ [ [ "noun" ] * len(sentence)], [] ]
         l = math.log
         t1 = defaultdict(dict)
         t2 = defaultdict(dict)
@@ -165,7 +174,6 @@ class Solver:
         MIN = 0.00001
 
         all_states = self.prob_s.keys()
-#        import pdb; pdb.set_trace()
         for i, s in enumerate(all_states):
             t1[i][0] = l(self.prob_start_s.get(s, MIN)) + \
                             l(self.prob_w_s.get((sentence[0], s), MIN))
@@ -177,14 +185,12 @@ class Solver:
                 for k, new_state in enumerate(all_states):
                     prevProb = t1[k][i-1]
                     transProb = self.prob_s1_s2.get((new_state, s), MIN)
-                    emissProb = self.prob_w_s.get((sentence[j], s), MIN)
+                    emissProb = self.prob_w_s.get((sentence[i], s), MIN)
                     curProb = prevProb + l(transProb) + l(emissProb)
                     curItem = curProb, k
                     if curItem > maxItem:
                         maxItem = curItem
                 t1[j][i], t2[j][i] = maxItem
-        print t1
-        print t2
 
         z = [0] * t
         z[t-1] = max(range(len(all_states)), key=lambda k: t1[k][len(sentence)-1])
@@ -195,6 +201,21 @@ class Solver:
 
         return [[result], []]
 
+    def viterbi_new(self, sentence):
+        MIN = 1e-6
+        maxItem = (-1e1000, ())
+        for states in product(self.prob_s.keys(), repeat=len(sentence)):
+            prob = math.log(self.prob_s.get(states[0]))
+            for index, (state, word) in enumerate(zip(states, sentence)):
+                prob += math.log(self.prob_w_s.get((word, state), MIN))
+                if index != len(sentence) - 1:
+                    prob += math.log(self.prob_s1_s2.get((states[index+1], state), MIN))
+            curItem = (prob, states)
+            if curItem > maxItem:
+                maxItem = curItem
+                print "Choosing:", maxItem
+        print maxItem
+        return [[ list(maxItem[1]) ], [] ]
 
     # This solve() method is called by label.py, so you should keep the interface the
     #  same, but you can change the code itself. 
