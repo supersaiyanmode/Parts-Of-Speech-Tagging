@@ -88,29 +88,36 @@ class Solver:
             prev_sample= dict[sample-1]
             next_sample={}
             for i in range(0,len(sentence)):
-                if i == 0:
+                if sentence[i] not in self.prob_w:
+                    next_sample[i]="noun"
+                    self.prob_w_s
+                elif i == 0:
                     next_sample[i] = self.calc_weight(1,sentence[i],prev_sample[i+1])
                 elif i == len(sentence)-1:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],1)
                 else:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],prev_sample[i+1])
             dict.append(next_sample)
-        return [ dict[1:], [] ]
+        return [ dict[1999:], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
+        #import pdb;pdb.set_trace()
         available_choices = []
         for speech in self.prob_s.keys():
-            if (word,speech) not in self.prob_w_s:
-                continue
             if prev_sample == 1:
-                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(next_sample,speech)]
-            if next_sample == 1:
-                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(speech,prev_sample)]
-            if prev_sample !=1 and next_sample != 1:
-                value = self.prob_w_s[(word,speech)]*self.prob_s1_s2[(next_sample,speech)]*self.prob_s1_s2[(speech,prev_sample)]
+                value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))
+            elif next_sample == 1:
+                value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample))
+            elif prev_sample !=1 and next_sample != 1:
+                value = self.prob_w_s.get((word,speech),self.calc_dummy_word(word,speech))*self.prob_s1_s2.get((next_sample,speech),self.calc_dummy(next_sample,speech))*self.prob_s1_s2.get((speech,prev_sample),self.calc_dummy(speech,prev_sample))
             available_choices.append([speech,value])
         return self.weightedChoice(available_choices)
-
+    def calc_dummy(self,next_sample,speech):
+            value = self.prob_s1_s2.get((speech,next_sample),0.0000001)*self.prob_s.get((next_sample),0.0000001)/self.prob_s.get((speech),0.0000001)
+            return value
+    def calc_dummy_word(self,word,speech):
+            value = self.prob_s_w1.get((speech,word),0.00001)*self.prob_w.get((word),0.00001)/self.prob_s.get((speech),0.00001)
+            return value
     def weightedChoice(self,choices):
         values, weights = zip(*choices)
         total = 0
@@ -184,7 +191,7 @@ class Solver:
         if algo == "Naive":
             return self.naive(sentence)
         elif algo == "Sampler":
-            return self.mcmc(sentence, 5)
+            return self.mcmc(sentence, 2000)
         elif algo == "Max marginal":
             return self.max_marginal(sentence)
         elif algo == "MAP":
