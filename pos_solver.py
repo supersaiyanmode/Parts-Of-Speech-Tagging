@@ -90,7 +90,8 @@ class Solver:
             for i in range(0,len(sentence)):
                 if sentence[i] not in self.prob_w:
                     next_sample[i]="noun"
-                    self.prob_w_s
+                elif len(prev_sample)==1:
+                    next_sample[i] = self.calc_weight(1,sentence[i],prev_sample[i]) 
                 elif i == 0:
                     next_sample[i] = self.calc_weight(1,sentence[i],prev_sample[i+1])
                 elif i == len(sentence)-1:
@@ -102,7 +103,7 @@ class Solver:
         return [ dict[::-1][0:5], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
-        #import pdb;pdb.set_trace()
+        #impor pdb;pdb.set_trace()
         available_choices = []
         for speech in self.prob_s.keys():
             if prev_sample == 1:
