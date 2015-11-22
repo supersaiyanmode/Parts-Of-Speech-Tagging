@@ -154,21 +154,18 @@ class Solver:
                 temp.append(sample[i])
             speech = Counter(temp).keys()
             occurence = Counter(temp).values()
-            #import pdb;pdb.set_trace()
             
             max_margin_dict.append(speech[occurence.index(max(occurence))])
             post_prob.append(float(max(occurence))/float(len(self.mcmc_dict)))
-            #post_prob = self.calc_postprob(max_margin_dict,sentence,occurence)
         return [ [max_margin_dict], [post_prob,] ]
+
     def calc_postprob(self,max_margin_dict,sentence,occurence):
         post_prob = []
-        #import pdb;pdb.set_trace()
         for i in range(0,len(sentence)):
-            
             post_prob.append(self.prob_s_w1.get((max_margin_dict[0],sentence[i]),0.00001))
         return post_prob
+
     def viterbi(self, sentence):
-        return [ [ [ "noun" ] * len(sentence)], [] ]
         l = math.log
         t1 = defaultdict(dict)
         t2 = defaultdict(dict)
@@ -176,7 +173,6 @@ class Solver:
         MIN = 0.00001
 
         all_states = self.prob_s.keys()
-#        import pdb; pdb.set_trace()
         for i, s in enumerate(all_states):
             t1[i][0] = l(self.prob_start_s.get(s, MIN)) + \
                             l(self.prob_w_s.get((sentence[0], s), MIN))
@@ -188,14 +184,12 @@ class Solver:
                 for k, new_state in enumerate(all_states):
                     prevProb = t1[k][i-1]
                     transProb = self.prob_s1_s2.get((new_state, s), MIN)
-                    emissProb = self.prob_w_s.get((sentence[j], s), MIN)
+                    emissProb = self.prob_w_s.get((sentence[i], s), MIN)
                     curProb = prevProb + l(transProb) + l(emissProb)
                     curItem = curProb, k
                     if curItem > maxItem:
                         maxItem = curItem
                 t1[j][i], t2[j][i] = maxItem
-        print_table(t1)
-        print_table(t2)
 
         z = [0] * t
         z[t-1] = max(range(len(all_states)), key=lambda k: t1[k][len(sentence)-1])
