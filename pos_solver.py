@@ -126,9 +126,9 @@ class Solver:
         for each_prob in prob:
                 prob_tot+= each_prob
                 prob_array.append(prob_tot)
-        x = random.random()*prob_tot
-        i = bisect(prob_array, x)
-        return speech[i]
+        pos_bis = random.random()*prob_tot
+        index = bisect(prob_array, pos_bis)
+        return speech[index]
 
     def best(self, sentence):
         return [ [ [ "noun" ] * len(sentence)], [] ]
