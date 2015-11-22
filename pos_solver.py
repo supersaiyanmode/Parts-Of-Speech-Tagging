@@ -230,8 +230,7 @@ class Solver:
         if algo == "Naive":
             return self.naive(sentence)
         elif algo == "Sampler":
-            return self.mcmc(sentence, 1000)
-        elif algo == "Max marginal":
+            return self.mcmc(sentence, 400400400      elif algo == "Max marginal":
             return self.max_marginal(sentence)
         elif algo == "MAP":
             return self.viterbi(sentence)
