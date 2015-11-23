@@ -1,13 +1,65 @@
 ###################################
 # CS B551 Fall 2015, Assignment #5
 #
-# Your names and user ids:
+# Your names and user ids : Dwipam Katariya, Srivatsan Iyer
+#                           ddkatari@iu.edu, srriyer@iu.edu
 #
 # (Based on skeleton code by D. Crandall)
 #
 #
 ####
-# Put your report here!!
+# Analysis:
+"""
+(1) We have implemented the program for NaiveBaye's, Gibbs Sampling, MaxMarginal Inference
+    and HMM Viterbi Deconding. During the learning stage, we store the results of P(Word),
+    P(Speech),P(Speech|Word) and P(Word|Speech) in a dictionary based on the training data.
+    This is implemented for the learning stage. Now we apply above mentioned algorithms on
+    the test data to predict the appropriate part of speech. 
+    For NaiveBaye's, we compute the maximum probable part of speech for the given word from 
+    the dictonary.
+    For MCMC Gibbs Sampling, we compute by default 400 samples as the algorithm.
+    First Sample we select at random for the test data, only the first element in further 
+    samples are calculated dependent on previous sample. and others are dependent on current
+    element that was computed. If time complexity is the factor, we suggest to reduce the 
+    sample count from 400 to 10 because, execution time would improve dramatically.
+    For words that are not in the learned dictonary, we choose the part of speech based upon
+    the neighbouring elements, both previous and next elements and then assign the part of 
+    speech with the highest probability. For example P(nick's=noun|S1=noun,S3=Verb), so we 
+    calculate for 'nick's'= other 11 part of speech and then select the part of speech with 
+    max probability. 
+    For Max Inference, for each word, we compute the highest occurence of the part of speech
+    in all the samples that were computed in MCMC Gibs Sampling, and assign the same. 
+    For HMM Viterbi, we follow the computation steps for the next state dependent upon the 
+    already computed value for previous state.
+(2) For the bc.test data we get following results based on multiple runs:
+    So far scored 2000 sentences with 29442 words.
+                   Words correct:     Sentences correct: 
+   0. Ground truth:      100.00%              100.00%
+          1. Naive:       91.84%               38.30%
+        2. Sampler:       87.43%               26.75%
+   3. Max marginal:       88.52%               29.15%
+            4. MAP:       93.16%               44.40%
+           5. Best:       90.05%               32.55%
+(3) While programming, we faced the problem of time efficiency with the number of sampler,
+    then we noticed after multiple runs and variation, Score for the same does not largely
+    vary, but the execution time dramatically varies.
+    When we checked the pos_scorer.py. we noticed that only the first sample is being used
+    for scoring purposes, so we picked the last few samples and reveresed the order, so that
+    the sample being picked for scoring is the last sample.
+(4) Implementation of best algorithm:
+    For the purposes of the best algorithm we have chosen, naive baye's, MAP and Max-Marginal
+    We put the three algorithms, through a voting process, where they vote on the best part
+    of speech for a given word. For each of the word, the part of speech with the larges number
+    of votes wins.
+    Additionaly we have dynamically allocated the part of speech to punctuations based on training
+    data. 
+    We can improve this algorithm, by calculating the sequence of part of speech for the entire
+    sentence, and then improve the values for the next part of speech
+    We can also use the adaptive learning by updating the probability values of the learned data 
+    while we are allocating the part of speech to the word, this way, if we encounter right part of
+    speech in the first sentence we would skip the chance of being wrong for the word in the next 
+    sentence. 
+"""
 ####
 import random
 from bisect import bisect
@@ -134,6 +186,13 @@ class Solver:
         return [ result[::-1][0:5], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
+        """
+        This function calculates the part of speech for the element in 
+        the next sample
+        We have handled all the conditions, of word not in the train data
+        as decribed in analysis, combination of noun and adjective not in
+        train data.
+        """
         #impor pdb;pdb.set_trace()
         available_choices = []
         for speech in self.prob_s.keys():
@@ -158,6 +217,16 @@ class Solver:
             value = self.prob_s_w1.get((speech,word),0)*self.prob_w.get((word),0)/self.prob_s.get((speech),0)
             return value
     def weightedChoice(self,keys):
+        """
+        This function returns the random choice for the sampler as per the
+        probability weights, this means if a=0.1 and b=0.9 out of 10 iterations
+        atleast a will be return once and b other times. 
+        We do this, by taking the sum of the weights for the respective part of
+        speech and then store it in an array. We multiply the total weights by 
+        a random float value with a rando function and then use bisect function
+        to get the index location to insert the value, hence probable times it 
+        will occur that, index will the returned as per proabability.
+        """
         speech, prob = zip(*keys)
         prob_tot = 0
         prob_array = []
@@ -166,6 +235,8 @@ class Solver:
                 prob_array.append(prob_tot)
         pos_bis = random.random()*prob_tot
         index = bisect(prob_array, pos_bis)
+        if index == len(speech):
+            index=index-1
         return speech[index]
 
     def best(self, sentence):
