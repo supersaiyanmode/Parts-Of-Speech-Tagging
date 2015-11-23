@@ -38,10 +38,21 @@ class Solver:
         self.prob_w = {}
         self.prob_start_s = {}
         self.mcmc_dict = []
+
     # Calculate the log of the posterior probability of a given sentence
     #  with a given part-of-speech labeling
     def posterior(self, sentence, label):
-        return 0
+        res = sum(math.log(self.prob_s_w1.get((s, w), 0.00000001)) for s, w in zip(label, sentence))
+        for index in range(len(label) -1):
+            s1 = label[index]
+            s2 = label[index + 1]
+            v = self.prob_s1_s2.get((s2, s1), 0.00000001)
+            res += math.log(v)
+        res -= math.log(sum(self.prob_w_s.get((w, s), 0.00001) * 
+                    self.prob_s.get(s, 0.00001)
+                    for s, w in zip(label, sentence)))
+
+        return res
 
     # Do the training!
     #
@@ -77,11 +88,6 @@ class Solver:
                              for (w,t), v in self.prob_w_s.iteritems()}
 
         self.prob_start_s = {t: v/float(start_s_count) for t,v in start_s.iteritems()}
-
-        print "----"
-        print [x for x in self.prob_s_w2 if 
-                        int(self.prob_s_w1[x]*1000) != int(self.prob_s_w2[x]*1000)][:10]
-        print "---"
 
     # Functions for each algorithm.
     #
@@ -237,7 +243,7 @@ class Solver:
         if algo == "Naive":
             return self.naive(sentence)
         elif algo == "Sampler":
-            return self.mcmc(sentence, 10)
+            return self.mcmc(sentence, 600)
         elif algo == "Max marginal":
             return self.max_marginal(sentence)
         elif algo == "MAP":
