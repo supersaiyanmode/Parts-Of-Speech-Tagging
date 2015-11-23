@@ -2,7 +2,7 @@
 # CS B551 Fall 2015, Assignment #5
 #
 # Your names and user ids : Dwipam Katariya, Srivatsan Iyer
-                            ddkatari@iu.edu, srriyer@iu.edu
+#                           ddkatari@iu.edu, srriyer@iu.edu
 #
 # (Based on skeleton code by D. Crandall)
 #
