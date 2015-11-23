@@ -63,12 +63,17 @@ class Solver:
         all_w = Counter()
         start_s = Counter()
 
+        self.puncts = set()
+
         for index, line in enumerate(data):
             line = zip(*line)
             for word, typ in line:
                 all_s[typ] += 1
                 all_ws[(word, typ)] += 1
                 all_w[word] += 1
+
+                if typ == ".":
+                    self.puncts.add(word)
 
             for (w1, t1), (w2, t2) in zip(line, line[1:]):
                 all_ss[(t1,t2)] += 1
@@ -164,10 +169,9 @@ class Solver:
         return speech[index]
 
     def best(self, sentence):
-        puncts = "; [ ? ! ( : , ] -- '' `` ' . )"
         res = [max(x) for x in zip(self.results_max_marginal, self.results_viterbi, self.results_naive)]
         for index, (state, word) in enumerate(zip(res, sentence)):
-            if word in puncts.split():
+            if word in self.puncts:
                res[index] = "."
         return [ [ res ], [] ]
 
