@@ -164,9 +164,10 @@ class Solver:
         return speech[index]
 
     def best(self, sentence):
+        puncts = "; [ ? ! ( : , ] -- '' `` ' . )"
         res = [max(x) for x in zip(self.results_max_marginal, self.results_viterbi, self.results_naive)]
         for index, (state, word) in enumerate(zip(res, sentence)):
-            if word in "; [ ? ! ( : , ] -- '' `` ' . )".split():
+            if word in puncts.split():
                res[index] = "."
         return [ [ res ], [] ]
 
@@ -198,6 +199,7 @@ class Solver:
         t = len(sentence)
         MIN = 0.00001
 
+        #Using pseudocode from Wikipedia: https://www.wikiwand.com/en/Viterbi_algorithm#/Pseudocode
         all_states = self.prob_s.keys()
         for i, s in enumerate(all_states):
             t1[i][0] = l(self.prob_start_s.get(s, MIN)) + \
