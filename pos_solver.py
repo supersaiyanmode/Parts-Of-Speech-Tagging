@@ -92,14 +92,14 @@ class Solver:
 
     def mcmc(self, sentence, sample_count):
       #  return [ [ ["noun"] * len(sentence) ] * sample_count, [] ]
-        dict=[]
-        temp_dict={}
+        result = []
+        temp_dict = [None] * len(sentence)
         for i in range(0,len(sentence)):
             temp_dict[i]=self.prob_s.keys()[random.choice(range(0,len(self.prob_s)))] 
-        dict.append(temp_dict)
+        result.append(temp_dict)
         for sample in range(1,sample_count):
-            prev_sample= dict[sample-1]
-            next_sample={}
+            prev_sample = result[sample-1]
+            next_sample = [None] * len(sentence)
             for i in range(0,len(sentence)):
                 if sentence[i] not in self.prob_w:
                     if len(prev_sample)==1:
@@ -118,9 +118,9 @@ class Solver:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],None)
                 else:
                     next_sample[i] = self.calc_weight(prev_sample[i-1],sentence[i],prev_sample[i+1])
-            dict.append(next_sample)
-        self.mcmc_dict =dict 
-        return [ dict[::-1][0:5], [] ]
+            result.append(next_sample)
+        self.mcmc_dict = result
+        return [ result[::-1][0:5], [] ]
 
     def calc_weight(self,prev_sample,word,next_sample):
         #impor pdb;pdb.set_trace()
